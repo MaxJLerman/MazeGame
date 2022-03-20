@@ -2,16 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 namespace WpfApp1
@@ -25,29 +19,14 @@ namespace WpfApp1
 
         public Player() { }
 
-        public void SetY(int y)
-        { this.y = y; }
-
-        public int GetY()
-        { return y; }
-
-        public void SetX(int x)
-        { this.x = x; }
-
-        public int GetX()
-        { return x; }
-
-        public void SetMoveCount(int moveCount)
-        { this.moveCount = moveCount; }
-        
-        public int GetMoveCount()
-        { return moveCount; }
-
-        public void SetCompass(char compass)
-        { this.compass = compass; }
-
-        public char GetCompass()
-        { return compass; }
+        public void SetY(int y) { this.y = y; }
+        public int GetY() { return y; }
+        public void SetX(int x) { this.x = x; }
+        public int GetX() { return x; }
+        public void SetMoveCount(int moveCount) { this.moveCount = moveCount; }
+        public int GetMoveCount() { return moveCount; }
+        public void SetCompass(char compass) { this.compass = compass; }
+        public char GetCompass() { return compass; }
 
         public void SetYX(int y, int x, int moveCount)
         {
@@ -64,11 +43,8 @@ namespace WpfApp1
 
         public TeleportSquare() { }
 
-        public int GetTsY()
-        { return TsY; }
-
-        public int GetTsX()
-        { return TsX; }
+        public int GetTsY() { return TsY; }
+        public int GetTsX() { return TsX; }
 
         public void SetTsYX(int TsY, int TsX)
         {
@@ -88,7 +64,7 @@ namespace WpfApp1
         // create a 20x20 array of character objects to represent the maze in text form
         static char[,] mazeTextForm = new char[21, 21];
 
-        // creates a prismarine
+        // creates a player called prismarine ;)
         public static Player prismarine = new Player();
         public TextBlock currentMoveCount = new TextBlock();
 
@@ -100,7 +76,7 @@ namespace WpfApp1
             this.KeyDown += new KeyEventHandler(RootWindow_KeyDown);
 
             // setting up the base properties of the content canvas
-            mazeCanvas.Height = 980;
+            mazeCanvas.Height = 980; // 100 less than 1080p
             mazeCanvas.Width = 1820;
             mazeCanvas.Background = Brushes.LightGray;
             RootWindow.Content = mazeCanvas;
@@ -110,11 +86,11 @@ namespace WpfApp1
 
         public void MainFunction()
         {
-            LoadInFlags();
+            LoadInComponents();
             CreateMazeTemplate();
         }
         
-        public void LoadInFlags()
+        public void LoadInComponents()
         {
             TextBlock statsTitle = new TextBlock();
             statsTitle.Width = 120;
@@ -168,6 +144,58 @@ namespace WpfApp1
             Canvas.SetLeft(resetFlagSelection, 180);
             mazeCanvas.Children.Add(resetFlagSelection);
             resetFlagSelection.Click += (sender, e) => ResetFlagSelection_click(sender, e, statsTitle, statsTitleUnderlined, recordNoOfMoves, currentMoveCount, flagSelector, confirmFlag);
+
+            List<TextBlock> rowAxis = new List<TextBlock>();
+            for (int i = 0; i < 21; i++)
+            {
+                TextBlock textBlock = new TextBlock
+                {
+                    Text = i.ToString(),
+                    Width = 20,
+                    Height = 20,
+                    Foreground = Brushes.Red
+                };
+                rowAxis.Add(textBlock);
+                Canvas.SetTop(textBlock, 250);
+                Canvas.SetLeft(textBlock, 697 + (i * 20.8));
+                textBlock.Visibility = Visibility.Hidden;
+                mazeCanvas.Children.Add(textBlock);
+            }
+
+            List<TextBlock> colAxis = new List<TextBlock>();
+            for (int i = 0; i < 21; i++)
+            {
+                TextBlock textBlock = new TextBlock
+                {
+                    Text = i.ToString(),
+                    Width = 20,
+                    Height = 20,
+                    Foreground = Brushes.Red,
+                    TextAlignment = TextAlignment.Right
+                };
+                colAxis.Add(textBlock);
+                Canvas.SetTop(textBlock, 274 + (i * 20.8));
+                Canvas.SetLeft(textBlock, 660);
+                textBlock.Visibility = Visibility.Hidden;
+                mazeCanvas.Children.Add(textBlock);
+            }
+
+            Button movePlayer = new Button();
+            movePlayer.Content = "movePlayer";
+            movePlayer.Width = 75;
+            Canvas.SetTop(movePlayer, 70);
+            Canvas.SetLeft(movePlayer, 780);
+            mazeCanvas.Children.Add(movePlayer);
+            movePlayer.Visibility = Visibility.Hidden;
+            movePlayer.Click += (sender, e) => MovePlayer_click(sender, e, flagSelector);
+
+            Button devTools = new Button();
+            devTools.Content = "devTools";
+            devTools.Width = 60;
+            Canvas.SetTop(devTools, 70);
+            Canvas.SetLeft(devTools, 700);
+            mazeCanvas.Children.Add(devTools);
+            devTools.Click += (sender, e) => DevTools_click(sender, e, rowAxis, colAxis, movePlayer);
 
             string[] files = Directory.GetFiles(@"F:\Documents\Programming\C#\MazeGameV2\mazes\Loadable\", "*.txt", SearchOption.TopDirectoryOnly);
             foreach (string file in files )
@@ -314,12 +342,15 @@ namespace WpfApp1
         private void RootWindow_KeyDown(object sender, KeyEventArgs e)
         {
             bool mazeCompleted = false;
+            bool changeMoveCounter = false;
 
             switch (e.Key)
             {
                 case Key.W:
                     if (prismarine.GetY() - 1 >= 0)
                     {
+                        if ((mazeTextForm[prismarine.GetY() - 1, prismarine.GetX()] != '#') && (mazeTextForm[prismarine.GetY() - 1, prismarine.GetX()] != 'S')) changeMoveCounter = true;
+
                         if (mazeTextForm[prismarine.GetY() - 1, prismarine.GetX()] == 'F')
                         {
                             mazeTextForm[prismarine.GetY(), prismarine.GetX()] = '#';
@@ -357,6 +388,8 @@ namespace WpfApp1
                 case Key.A:
                     if (prismarine.GetX() - 1 >= 0)
                     {
+                        if ((mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] != '#') && (mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] != 'S')) changeMoveCounter = true;
+
                         if (mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] == 'F')
                         {
                             mazeTextForm[prismarine.GetY(), prismarine.GetX()] = '#';
@@ -394,6 +427,8 @@ namespace WpfApp1
                 case Key.S:
                     if (prismarine.GetY() + 1 <= 20)
                     {
+                        if ((mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] != '#') && (mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] != 'S')) changeMoveCounter = true;
+
                         if (mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] == 'F')
                         {
                             mazeTextForm[prismarine.GetY(), prismarine.GetX()] = '#';
@@ -431,6 +466,8 @@ namespace WpfApp1
                 case Key.D:
                     if (prismarine.GetX() + 1 <= 20)
                     {
+                        if ((mazeTextForm[prismarine.GetY(), prismarine.GetX() + 1] != '#') && (mazeTextForm[prismarine.GetY(), prismarine.GetX() + 1] != 'S')) changeMoveCounter = true;
+
                         if (mazeTextForm[prismarine.GetY(), prismarine.GetX() + 1] == 'F')
                         {
                             mazeTextForm[prismarine.GetY(), prismarine.GetX()] = '#';
@@ -468,6 +505,7 @@ namespace WpfApp1
                 case Key.Space:
                     if (mazeTextForm[prismarine.GetY(), prismarine.GetX()] == 'T')
                     {
+                        changeMoveCounter = true;
                         TeleportSquare ts = TeleportPosition(flag);
 
                         mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.Aqua;
@@ -482,7 +520,7 @@ namespace WpfApp1
                     break;
             }
 
-            prismarine.SetMoveCount(prismarine.GetMoveCount() + 1);
+            if (changeMoveCounter) prismarine.SetMoveCount(prismarine.GetMoveCount() + 1);
             currentMoveCount.Text = "Current: " + prismarine.GetMoveCount() + " moves";
 
             if (mazeCompleted)
@@ -525,6 +563,32 @@ namespace WpfApp1
             statsTitleUnderlined.Text = "";
             recordNoOfMoves.Text = "";
             currentMoveCount.Text = "";
+        }
+        
+        private void MovePlayer_click(object sender, EventArgs e, ComboBox flagSelector)
+        {
+            if (flagSelector.SelectedIndex > -1)
+            {
+                
+            }
+        }
+
+        private void DevTools_click(object sender, EventArgs e, List<TextBlock> rowAxis, List<TextBlock> colAxis, Button movePlayer)
+        {
+            bool invisible = rowAxis.All(label => label.IsVisible == false);
+
+            if (invisible)
+            { 
+                foreach (TextBlock label in rowAxis) label.Visibility = Visibility.Visible;
+                foreach (TextBlock label in colAxis) label.Visibility = Visibility.Visible;
+                movePlayer.Visibility = Visibility.Visible;
+            }
+            else
+            { 
+                foreach (TextBlock label in rowAxis) label.Visibility = Visibility.Hidden;
+                foreach (TextBlock label in colAxis) label.Visibility = Visibility.Hidden;
+                movePlayer.Visibility = Visibility.Hidden;
+            }
         }
     }
 }

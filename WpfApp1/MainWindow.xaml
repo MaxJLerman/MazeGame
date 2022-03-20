@@ -8,6 +8,6 @@
         Title="Maze Game" Height="1080" Width="1920"
         WindowStartupLocation="CenterScreen">
     <Grid>
-        
+
     </Grid>
 </Window>
