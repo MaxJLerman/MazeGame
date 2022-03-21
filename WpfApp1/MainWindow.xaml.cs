@@ -569,7 +569,8 @@ namespace WpfApp1
         {
             if (flagSelector.SelectedIndex > -1)
             {
-                
+                MovePlayer mp = new MovePlayer();
+                mp.ShowDialog();
             }
         }
 
