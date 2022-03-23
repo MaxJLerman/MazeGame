@@ -56,7 +56,7 @@ namespace WpfApp1
     public partial class MainWindow : Window
     {
         // create a canvas to display the maze
-        static Canvas mazeCanvas = new Canvas();
+        static Canvas mazeCanvas = new Canvas(); // does this need to be a global variable???????
 
         // create 400 rectangle objects to be squares in the maze
         static Rectangle[,] mazeGrid = new Rectangle[21, 21];
@@ -73,19 +73,34 @@ namespace WpfApp1
         public MainWindow()
         {
             InitializeComponent();
-            this.KeyDown += new KeyEventHandler(RootWindow_KeyDown);
+            //this.KeyDown += new KeyEventHandler(RootWindow_KeyDown);
+            this.KeyDown += delegate (object sender, KeyEventArgs e) { RootWindow_KeyDown(sender, e, mazeTextForm); };
 
             // setting up the base properties of the content canvas
             mazeCanvas.Height = 980; // 100 less than 1080p
             mazeCanvas.Width = 1820;
             mazeCanvas.Background = Brushes.LightGray;
-            RootWindow.Content = mazeCanvas;
 
-            MainFunction();
+            //MainFunction();
+            MenuFunction();
         }
 
         public void MainFunction()
         {
+            Canvas menuCanvas = new Canvas
+            {
+                Height = 980,
+                Width = 1820,
+                Background = Brushes.LightGray
+            };
+            RootWindow.Content = menuCanvas;
+
+            
+        }
+
+        public void MenuFunction()
+        {
+            RootWindow.Content = mazeCanvas;
             LoadInComponents();
             CreateMazeTemplate();
         }
@@ -339,7 +354,7 @@ namespace WpfApp1
             return "";
         }
 
-        private void RootWindow_KeyDown(object sender, KeyEventArgs e)
+        private void RootWindow_KeyDown(object sender, KeyEventArgs e, char[,] mazeTextForm)
         {
             bool mazeCompleted = false;
             bool changeMoveCounter = false;
@@ -571,6 +586,8 @@ namespace WpfApp1
             {
                 MovePlayer mp = new MovePlayer();
                 mp.ShowDialog();
+
+                //((Window1)Application.Current.Windows[1]).textBlock1.Text="your text";
             }
         }
 
