@@ -55,34 +55,28 @@ namespace WpfApp1
     
     public partial class MainWindow : Window
     {
-        // create a canvas to display the maze
-        static Canvas mazeCanvas = new Canvas(); // does this need to be a global variable???????
-
-        // create 400 rectangle objects to be squares in the maze
-        static Rectangle[,] mazeGrid = new Rectangle[21, 21];
-
-        // create a 20x20 array of character objects to represent the maze in text form
-        static char[,] mazeTextForm = new char[21, 21];
-
-        // creates a player called prismarine ;)
-        public static Player prismarine = new Player();
-        public TextBlock currentMoveCount = new TextBlock();
-
-        public string flag = "";
-
         public MainWindow()
         {
             InitializeComponent();
-            //this.KeyDown += new KeyEventHandler(RootWindow_KeyDown);
-            this.KeyDown += delegate (object sender, KeyEventArgs e) { RootWindow_KeyDown(sender, e, mazeTextForm); };
 
-            // setting up the base properties of the content canvas
+            Canvas mazeCanvas = new Canvas(); // create a canvas to display the maze
+            Rectangle[,] mazeGrid = new Rectangle[21, 21]; // create 400 rectangle objects to be squares in the maze
+            char[,] mazeTextForm = new char[21, 21]; // create a 20x20 array of character objects to represent the maze in text form
+
+            ComboBox flagSelector = new ComboBox();
+            TextBlock currentMoveCount = new TextBlock();
+
+            Player prismarine = new Player(); // creating a player called prismarine ;)
+
+            //this.KeyDown += new KeyEventHandler(RootWindow_KeyDown);
+            this.KeyDown += delegate (object sender, KeyEventArgs e) { RootWindow_KeyDown(sender, e, prismarine, mazeCanvas, mazeGrid, mazeTextForm, flagSelector, currentMoveCount); };
+
             mazeCanvas.Height = 980; // 100 less than 1080p
             mazeCanvas.Width = 1820;
             mazeCanvas.Background = Brushes.LightGray;
 
             //MainFunction();
-            MenuFunction();
+            MenuFunction(prismarine, mazeCanvas, mazeGrid, mazeTextForm, flagSelector, currentMoveCount);
         }
 
         public void MainFunction()
@@ -95,17 +89,38 @@ namespace WpfApp1
             };
             RootWindow.Content = menuCanvas;
 
-            
+            TextBlock mainTitle = new TextBlock
+            {
+                Text = "MazeGame",
+                Width = 400,
+                FontSize = 70
+            };
+            Canvas.SetTop(mainTitle, 200);
+            Canvas.SetLeft(mainTitle, 1820 / 2 - 170);
+            menuCanvas.Children.Add(mainTitle);
+
+            Button playMazes = new Button
+            {
+                Content = "Play mazes",
+                Width = 300,
+                Height = 100,
+                FontSize = 50
+            };
+            Canvas.SetTop(playMazes, 400);
+            Canvas.SetLeft(playMazes, 1820 / 2 - 150);
+            menuCanvas.Children.Add(playMazes);
+            playMazes.Click += (sender, e) => PlayMaze_click(sender, e);
         }
 
-        public void MenuFunction()
+        public void MenuFunction(Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, ComboBox flagSelector, TextBlock currentMoveCount)
         {
+            // if playgame is clicked
             RootWindow.Content = mazeCanvas;
-            LoadInComponents();
-            CreateMazeTemplate();
+            LoadInComponents(prismarine, mazeCanvas, mazeGrid, mazeTextForm, flagSelector, currentMoveCount);
+            CreateMazeTemplate(mazeCanvas, mazeGrid);
         }
         
-        public void LoadInComponents()
+        public void LoadInComponents(Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, ComboBox flagSelector, TextBlock currentMoveCount)
         {
             TextBlock statsTitle = new TextBlock();
             statsTitle.Width = 120;
@@ -125,7 +140,6 @@ namespace WpfApp1
             Canvas.SetLeft(recordNoOfMoves, 50);
             mazeCanvas.Children.Add(recordNoOfMoves);
 
-            //TextBlock currentMoveCount = new TextBlock();
             currentMoveCount.Width = 120;
             Canvas.SetTop(currentMoveCount, 220);
             Canvas.SetLeft(currentMoveCount, 50);
@@ -138,7 +152,6 @@ namespace WpfApp1
             Canvas.SetLeft(chooseFlag, 50);
             mazeCanvas.Children.Add(chooseFlag);
 
-            ComboBox flagSelector = new ComboBox();
             flagSelector.Width = 60;
             Canvas.SetTop(flagSelector, 70);
             Canvas.SetLeft(flagSelector, 50);
@@ -150,7 +163,7 @@ namespace WpfApp1
             Canvas.SetTop(confirmFlag, 70);
             Canvas.SetLeft(confirmFlag, 115);
             mazeCanvas.Children.Add(confirmFlag);
-            confirmFlag.Click += (sender, e) => ConfirmFlag_click(sender, e, statsTitle, statsTitleUnderlined, recordNoOfMoves, currentMoveCount, flagSelector, confirmFlag);
+            confirmFlag.Click += (sender, e) => ConfirmFlag_click(sender, e, prismarine, mazeGrid, mazeTextForm, statsTitle, statsTitleUnderlined, recordNoOfMoves, currentMoveCount, flagSelector, confirmFlag);
 
             Button resetFlagSelection = new Button();
             resetFlagSelection.Content = "Reset selection";
@@ -158,7 +171,7 @@ namespace WpfApp1
             Canvas.SetTop(resetFlagSelection, 70);
             Canvas.SetLeft(resetFlagSelection, 180);
             mazeCanvas.Children.Add(resetFlagSelection);
-            resetFlagSelection.Click += (sender, e) => ResetFlagSelection_click(sender, e, statsTitle, statsTitleUnderlined, recordNoOfMoves, currentMoveCount, flagSelector, confirmFlag);
+            resetFlagSelection.Click += (sender, e) => ResetFlagSelection_click(sender, e, prismarine, mazeCanvas, mazeGrid, statsTitle, statsTitleUnderlined, recordNoOfMoves, currentMoveCount, flagSelector, confirmFlag);
 
             List<TextBlock> rowAxis = new List<TextBlock>();
             for (int i = 0; i < 21; i++)
@@ -220,7 +233,7 @@ namespace WpfApp1
             }
         }
 
-        public void CreateMazeTemplate()
+        public void CreateMazeTemplate(Canvas mazeCanvas, Rectangle[,] mazeGrid)
         {
             // setting up the base properties of the 400 rectangle objects
             for (int row = 0; row < 21; row++)
@@ -247,7 +260,7 @@ namespace WpfApp1
             }
         }
 
-        public void ImportMaze(string filePath)
+        public void ImportMaze(string filePath, char[,] mazeTextForm)
         {
             string[] lines = File.ReadAllLines(filePath);
 
@@ -266,7 +279,7 @@ namespace WpfApp1
             }
         }
 
-        public void DisplayMaze()
+        public void DisplayMaze(Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm)
         {
             for (int row = 0; row < 21; row++)
             {
@@ -311,7 +324,7 @@ namespace WpfApp1
             }
         }
 
-        public TeleportSquare TeleportPosition(string fileName)
+        public TeleportSquare TeleportPosition(Player prismarine, string fileName, char[,] mazeTextForm)
         {
             string filePath = @"F:\Documents\Programming\C#\MazeGameV2\mazes\Loadable\" + fileName;
             string[] lines = File.ReadAllLines(filePath);
@@ -347,14 +360,14 @@ namespace WpfApp1
 
             foreach (string line in lines)
             {
-                if (line.Substring(0, 5) == flagName)
+                if (line.Substring(0, 5) == flagName.Substring(0, 5)) 
                 { return line.Substring(7); }
             }
 
-            return "";
+            return "NA";
         }
 
-        private void RootWindow_KeyDown(object sender, KeyEventArgs e, char[,] mazeTextForm)
+        private void RootWindow_KeyDown(object sender, KeyEventArgs e, Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, ComboBox flagSelector, TextBlock currentMoveCount)
         {
             bool mazeCompleted = false;
             bool changeMoveCounter = false;
@@ -521,7 +534,8 @@ namespace WpfApp1
                     if (mazeTextForm[prismarine.GetY(), prismarine.GetX()] == 'T')
                     {
                         changeMoveCounter = true;
-                        TeleportSquare ts = TeleportPosition(flag);
+                        string flagName = flagSelector.SelectedItem.ToString() + ".txt";
+                        TeleportSquare ts = TeleportPosition(prismarine, flagName, mazeTextForm);
 
                         mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.Aqua;
                         prismarine.SetYX(ts.GetTsY(), ts.GetTsX(), prismarine.GetMoveCount());
@@ -542,19 +556,24 @@ namespace WpfApp1
             { MessageBox.Show("You completed the maze in " + prismarine.GetMoveCount() + " moves!"); }
         }
 
-        private void ConfirmFlag_click(object sender, EventArgs e, TextBlock statsTitle, TextBlock statsTitleUnderlined, TextBlock recordNoOfMoves, TextBlock currentMoveCount, ComboBox flagSelector, Button confirmFlag)
+        private void PlayMaze_click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void ConfirmFlag_click(object sender, EventArgs e, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, TextBlock statsTitle, TextBlock statsTitleUnderlined, TextBlock recordNoOfMoves, TextBlock currentMoveCount, ComboBox flagSelector, Button confirmFlag)
         {
             if (flagSelector.SelectedIndex > -1)
             {
                 flagSelector.IsEnabled = false;
                 confirmFlag.IsEnabled = false;
 
-                string flagName = flagSelector.SelectedItem.ToString();
-                flag = flagName + ".txt"; // try and remove the need for this global variable
-                string filePath = @"F:\Documents\Programming\C#\MazeGameV2\mazes\Loadable\" + flag;
+                string flagName = flagSelector.SelectedItem.ToString() + ".txt";
+                string filePath = @"F:\Documents\Programming\C#\MazeGameV2\mazes\Loadable\" + flagName;
 
-                ImportMaze(filePath);
-                DisplayMaze();
+
+                ImportMaze(filePath, mazeTextForm);
+                DisplayMaze(prismarine, mazeGrid, mazeTextForm);
 
                 statsTitle.Text = "prismarine stats:";
                 statsTitleUnderlined.Text = "_________________";
@@ -565,14 +584,14 @@ namespace WpfApp1
             else MessageBox.Show("Flag not selected!");
         }
 
-        private void ResetFlagSelection_click(object sender, EventArgs e, TextBlock statsTitle, TextBlock statsTitleUnderlined, TextBlock recordNoOfMoves, TextBlock currentMoveCount, ComboBox flagSelector, Button confirmFlag)
+        private void ResetFlagSelection_click(object sender, EventArgs e, Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, TextBlock statsTitle, TextBlock statsTitleUnderlined, TextBlock recordNoOfMoves, TextBlock currentMoveCount, ComboBox flagSelector, Button confirmFlag)
         {
             flagSelector.SelectedIndex = -1;
             flagSelector.IsEnabled = true;
             confirmFlag.IsEnabled = true;
 
             prismarine.SetYX(0, 0, 0);
-            CreateMazeTemplate();
+            CreateMazeTemplate(mazeCanvas, mazeGrid);
 
             statsTitle.Text = "";
             statsTitleUnderlined.Text = "";
