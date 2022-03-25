@@ -63,23 +63,18 @@ namespace WpfApp1
             Rectangle[,] mazeGrid = new Rectangle[21, 21]; // create 400 rectangle objects to be squares in the maze
             char[,] mazeTextForm = new char[21, 21]; // create a 20x20 array of character objects to represent the maze in text form
 
-            ComboBox flagSelector = new ComboBox();
+            ComboBox flagSelector = new ComboBox(); // creating components that need to be passed to multiple functions further down
+            Button confirmFlag = new Button();
             TextBlock currentMoveCount = new TextBlock();
 
-            Player prismarine = new Player(); // creating a player called prismarine ;)
+            Player prismarine = new Player(); // creating a player called Prismarine ;)
 
-            //this.KeyDown += new KeyEventHandler(RootWindow_KeyDown);
             this.KeyDown += delegate (object sender, KeyEventArgs e) { RootWindow_KeyDown(sender, e, prismarine, mazeCanvas, mazeGrid, mazeTextForm, flagSelector, currentMoveCount); };
 
-            mazeCanvas.Height = 980; // 100 less than 1080p
-            mazeCanvas.Width = 1820;
-            mazeCanvas.Background = Brushes.LightGray;
-
-            //MainFunction();
-            MenuFunction(prismarine, mazeCanvas, mazeGrid, mazeTextForm, flagSelector, currentMoveCount);
+            MainFunction(prismarine, mazeCanvas, mazeGrid, mazeTextForm, flagSelector, confirmFlag, currentMoveCount);
         }
 
-        public void MainFunction()
+        public void MainFunction(Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, ComboBox flagSelector, Button confirmFlag, TextBlock currentMoveCount)
         {
             Canvas menuCanvas = new Canvas
             {
@@ -102,25 +97,83 @@ namespace WpfApp1
             Button playMazes = new Button
             {
                 Content = "Play mazes",
-                Width = 300,
+                Width = 400,
                 Height = 100,
                 FontSize = 50
             };
             Canvas.SetTop(playMazes, 400);
             Canvas.SetLeft(playMazes, 1820 / 2 - 150);
             menuCanvas.Children.Add(playMazes);
-            playMazes.Click += (sender, e) => PlayMaze_click(sender, e);
+            playMazes.Click += (sender, e) => PlayMazes_click(sender, e, prismarine, mazeCanvas, mazeGrid, mazeTextForm, flagSelector, confirmFlag, currentMoveCount);
+
+            Button solveMazes = new Button
+            {
+                Content = "Solve mazes",
+                Width = 400,
+                Height = 100,
+                FontSize = 50
+            };
+            Canvas.SetTop(solveMazes, 550);
+            Canvas.SetLeft(solveMazes, 1820 / 2 - 150);
+            menuCanvas.Children.Add(solveMazes);
+            solveMazes.Click += (sender, e) => SolveMazes_click(sender, e, new Canvas(), mazeGrid, mazeTextForm, flagSelector, currentMoveCount);
+
+            Canvas createCanvas = new Canvas
+            {
+                Height = 980,
+                Width = 1820,
+                Background = Brushes.LightGray
+            };
+            Button createMazes = new Button
+            {
+                Content = "Create mazes",
+                Width = 400,
+                Height = 100,
+                FontSize = 50
+            };
+            Canvas.SetTop(createMazes, 700);
+            Canvas.SetLeft(createMazes, 1820 / 2 - 150);
+            menuCanvas.Children.Add(createMazes);
+            createMazes.Click += (sender, e) => CreateMazes_click(sender, e, new Canvas(), mazeGrid, mazeTextForm);
         }
 
-        public void MenuFunction(Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, ComboBox flagSelector, TextBlock currentMoveCount)
+        #region Menu choices
+
+        private void PlayMazes_click(object sender, EventArgs e, Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, ComboBox flagSelector, Button confirmFlag, TextBlock currentMoveCount)
         {
-            // if playgame is clicked
+            mazeCanvas.Height = 980; // 100 less than 1080p
+            mazeCanvas.Width = 1820;
+            mazeCanvas.Background = Brushes.LightGray;
             RootWindow.Content = mazeCanvas;
-            LoadInComponents(prismarine, mazeCanvas, mazeGrid, mazeTextForm, flagSelector, currentMoveCount);
+
+            LoadMazeComponents(prismarine, mazeCanvas, mazeGrid, mazeTextForm, flagSelector, confirmFlag, currentMoveCount);
             CreateMazeTemplate(mazeCanvas, mazeGrid);
         }
-        
-        public void LoadInComponents(Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, ComboBox flagSelector, TextBlock currentMoveCount)
+
+        private void SolveMazes_click(object sender, EventArgs e, Canvas solveCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, ComboBox flagSelector, TextBlock currentMoveCount) 
+        {
+            solveCanvas.Height = 980; // 100 less than 1080p
+            solveCanvas.Width = 1820;
+            solveCanvas.Background = Brushes.LightGray;
+            RootWindow.Content = solveCanvas;
+
+            LoadSolveComponents(solveCanvas, mazeGrid, mazeTextForm, flagSelector, currentMoveCount);
+            CreateMazeTemplate(solveCanvas, mazeGrid);
+        }
+
+        private void CreateMazes_click(object sender, EventArgs e, Canvas createCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm)
+        {
+            RootWindow.Content = createCanvas;
+
+            //LoadCreateComponents(createCanvas, mazeGrid, mazeTextForm);
+            CreateMazeTemplate(createCanvas, mazeGrid);
+        }
+
+        #endregion
+
+        #region Loading in respective components
+
+        public void LoadMazeComponents(Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, ComboBox flagSelector, Button confirmFlag, TextBlock currentMoveCount)
         {
             TextBlock statsTitle = new TextBlock();
             statsTitle.Width = 120;
@@ -146,8 +199,8 @@ namespace WpfApp1
             mazeCanvas.Children.Add(currentMoveCount);
 
             TextBlock chooseFlag = new TextBlock();
-            chooseFlag.Text = "Choose a maze below:";
-            chooseFlag.Width = 120;
+            chooseFlag.Text = "Choose a maze to play:";
+            chooseFlag.Width = 130;
             Canvas.SetTop(chooseFlag, 50);
             Canvas.SetLeft(chooseFlag, 50);
             mazeCanvas.Children.Add(chooseFlag);
@@ -156,8 +209,8 @@ namespace WpfApp1
             Canvas.SetTop(flagSelector, 70);
             Canvas.SetLeft(flagSelector, 50);
             mazeCanvas.Children.Add(flagSelector);
+            LoadFlagSelection(flagSelector);
 
-            Button confirmFlag = new Button();
             confirmFlag.Content = "Confirm";
             confirmFlag.Width = 60;
             Canvas.SetTop(confirmFlag, 70);
@@ -224,16 +277,44 @@ namespace WpfApp1
             Canvas.SetLeft(devTools, 700);
             mazeCanvas.Children.Add(devTools);
             devTools.Click += (sender, e) => DevTools_click(sender, e, rowAxis, colAxis, movePlayer);
+        }
 
+        public void LoadFlagSelection(ComboBox flagSelector)
+        {
             string[] files = Directory.GetFiles(@"F:\Documents\Programming\C#\MazeGameV2\mazes\Loadable\", "*.txt", SearchOption.TopDirectoryOnly);
-            foreach (string file in files )
+            foreach (string file in files)
             {
                 if (!file.Substring(54).Contains('_'))
                 { flagSelector.Items.Add(file.Substring(54, 5)); }
             }
         }
 
-        public void CreateMazeTemplate(Canvas mazeCanvas, Rectangle[,] mazeGrid)
+        public void LoadSolveComponents(Canvas solveCanvas, Rectangle[,] solvedGrid, char[,] solvedTextForm, ComboBox flagSelector, TextBlock currentMoveCount)
+        {
+            TextBlock chooseFlag = new TextBlock();
+            chooseFlag.Text = "Choose a maze to solve:";
+            chooseFlag.Width = 130;
+            Canvas.SetTop(chooseFlag, 50);
+            Canvas.SetLeft(chooseFlag, 50);
+            solveCanvas.Children.Add(chooseFlag);
+
+            flagSelector.Width = 60;
+            Canvas.SetTop(flagSelector, 70);
+            Canvas.SetLeft(flagSelector, 50);
+            solveCanvas.Children.Add(flagSelector);
+            LoadFlagSelection(flagSelector);
+
+            confirmFlag.Content = "Confirm";
+            confirmFlag.Width = 60;
+            Canvas.SetTop(confirmFlag, 70);
+            Canvas.SetLeft(confirmFlag, 115);
+            solveCanvas.Children.Add(confirmFlag);
+            confirmFlag.Click += (sender, e) => ConfirmFlag_click(sender, e, null, solvedGrid, solvedTextForm, null, null, null, currentMoveCount, flagSelector, confirmFlag);
+        }
+
+        #endregion
+
+        public void CreateMazeTemplate(Canvas canvas, Rectangle[,] mazeGrid)
         {
             // setting up the base properties of the 400 rectangle objects
             for (int row = 0; row < 21; row++)
@@ -249,13 +330,13 @@ namespace WpfApp1
                     };
 
                     // calculating the indexes to make the maze grid appear in the centre of the canvas
-                    double topIndex = ((mazeCanvas.Height / 2) - (10 * 21) - 10.5);
-                    double leftIndex = ((mazeCanvas.Width / 2) - (10 * 21)) - 10.5;
+                    double topIndex = ((canvas.Height / 2) - (10 * 21) - 10.5);
+                    double leftIndex = ((canvas.Width / 2) - (10 * 21)) - 10.5;
 
                     // inserting each rectangle object onto the canvas
                     Canvas.SetTop(mazeGrid[row, col], topIndex + (row * 21));
                     Canvas.SetLeft(mazeGrid[row, col], leftIndex + (col * 21));
-                    mazeCanvas.Children.Add(mazeGrid[row, col]);
+                    canvas.Children.Add(mazeGrid[row, col]);
                 }
             }
         }
@@ -351,7 +432,7 @@ namespace WpfApp1
             }
 
             return ts;
-        }
+        }   
 
         public string PullFlagRecord(string flagName)
         {
@@ -556,11 +637,6 @@ namespace WpfApp1
             { MessageBox.Show("You completed the maze in " + prismarine.GetMoveCount() + " moves!"); }
         }
 
-        private void PlayMaze_click(object sender, EventArgs e)
-        {
-
-        }
-
         private void ConfirmFlag_click(object sender, EventArgs e, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, TextBlock statsTitle, TextBlock statsTitleUnderlined, TextBlock recordNoOfMoves, TextBlock currentMoveCount, ComboBox flagSelector, Button confirmFlag)
         {
             if (flagSelector.SelectedIndex > -1)
@@ -571,14 +647,13 @@ namespace WpfApp1
                 string flagName = flagSelector.SelectedItem.ToString() + ".txt";
                 string filePath = @"F:\Documents\Programming\C#\MazeGameV2\mazes\Loadable\" + flagName;
 
-
-                ImportMaze(filePath, mazeTextForm);
-                DisplayMaze(prismarine, mazeGrid, mazeTextForm);
-
                 statsTitle.Text = "prismarine stats:";
                 statsTitleUnderlined.Text = "_________________";
                 recordNoOfMoves.Text = "Record: " + PullFlagRecord(flagName) + " moves";
                 currentMoveCount.Text = "Current: " + prismarine.GetMoveCount() + " moves";
+
+                ImportMaze(filePath, mazeTextForm);
+                DisplayMaze(prismarine, mazeGrid, mazeTextForm);
             }
             
             else MessageBox.Show("Flag not selected!");
@@ -598,17 +673,8 @@ namespace WpfApp1
             recordNoOfMoves.Text = "";
             currentMoveCount.Text = "";
         }
-        
-        private void MovePlayer_click(object sender, EventArgs e, ComboBox flagSelector)
-        {
-            if (flagSelector.SelectedIndex > -1)
-            {
-                MovePlayer mp = new MovePlayer();
-                mp.ShowDialog();
 
-                //((Window1)Application.Current.Windows[1]).textBlock1.Text="your text";
-            }
-        }
+        #region Developer tools
 
         private void DevTools_click(object sender, EventArgs e, List<TextBlock> rowAxis, List<TextBlock> colAxis, Button movePlayer)
         {
@@ -627,6 +693,19 @@ namespace WpfApp1
                 movePlayer.Visibility = Visibility.Hidden;
             }
         }
+
+        private void MovePlayer_click(object sender, EventArgs e, ComboBox flagSelector)
+        {
+            if (flagSelector.SelectedIndex > -1)
+            {
+                MovePlayer mp = new MovePlayer();
+                mp.ShowDialog();
+
+                //((Window1)Application.Current.Windows[1]).textBlock1.Text="your text";
+            }
+        }
+
+        #endregion
     }
 }
 
@@ -636,5 +715,6 @@ namespace WpfApp1
             add timer
             add controls description
             add sound effects - voiced by courtney? "NO! SHOULD BE AT THE TOP OF THE LIST! GET RID OF THE QUESTION MARK!!!!!!! x"
-            make default blank maze (first time starting up?) the title of the game
+            make default blank maze (first time starting up?) + black squares => the title of the game, display before main menu
+            implement a way for people to store their name & scores in MySQL database or MongoDB database??? if not, then in notepad file
 */
