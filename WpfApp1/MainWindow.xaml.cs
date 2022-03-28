@@ -52,16 +52,19 @@ namespace WpfApp1
     {
         private int TsY;
         private int TsX;
+        private bool used;
 
         public TeleportSquare() { }
 
         public int GetTsY() { return TsY; }
         public int GetTsX() { return TsX; }
-
-        public void SetTsYX(int TsY, int TsX)
+        public bool GetUsed() { return used; }
+        public void SetUsed(bool used) { this.used = used; }
+        public void SetTsYX(int TsY, int TsX, bool used)
         {
             this.TsY = TsY;
             this.TsX = TsX;
+            this.used = used;
         }
     }
 
@@ -440,35 +443,6 @@ namespace WpfApp1
             }
         }
 
-        public TeleportSquare TeleportPosition(Player prismarine, string fileName, char[,] mazeTextForm)
-        {
-            string filePath = @"F:\Documents\Programming\C#\MazeGameV2\mazes\Loadable\" + fileName;
-            string[] lines = File.ReadAllLines(filePath);
-
-            TeleportSquare ts = new TeleportSquare();
-
-            int j = -1;
-            bool breakLoops = false;
-            foreach (string line in lines)
-            {
-                j++;
-                for (int i = 0; i < line.Length; i++)
-                {
-                    if (mazeTextForm[j, i] == 'T' && prismarine.GetY() != j)
-                    {
-                        ts.SetTsYX(j, i);
-                        breakLoops = true;
-                        break;
-                    }
-                }
-
-                if (breakLoops)
-                { break; }
-            }
-
-            return ts;
-        }   
-
         public string PullFlagRecord(string flagName)
         {
             string filePath = @"F:\Documents\Programming\C#\MazeGameV2\maze_records\loadable.txt";
@@ -719,6 +693,35 @@ namespace WpfApp1
             }
         }
 
+        public TeleportSquare TeleportPosition(Player prismarine, string fileName, char[,] mazeTextForm)
+        {
+            string filePath = @"F:\Documents\Programming\C#\MazeGameV2\mazes\Loadable\" + fileName;
+            string[] lines = File.ReadAllLines(filePath);
+
+            TeleportSquare ts = new TeleportSquare(); // needs to be declared way further up to avoid being recreated every time I land on a teleport pad
+
+            int j = -1;
+            bool breakLoops = false;
+            foreach (string line in lines)
+            {
+                j++;
+                for (int i = 0; i < line.Length; i++)
+                {
+                    if (mazeTextForm[j, i] == 'T' && prismarine.GetY() != j)
+                    {
+                        ts.SetTsYX(j, i, false);
+                        breakLoops = true;
+                        break;
+                    }
+                }
+
+                if (breakLoops)
+                { break; }
+            }
+
+            return ts;
+        }
+
         public void ChangeMoveCounter(Player prismarine, TextBlock currentMoveCount, ref bool changeMoveCounter)
         {
             if (changeMoveCounter) prismarine.SetMoveCount(prismarine.GetMoveCount() + 1);
@@ -929,7 +932,7 @@ namespace WpfApp1
 
             DispatcherTimer dispatcher = new DispatcherTimer(DispatcherPriority.Send);
             dispatcher.Tick += (sender2, e2) => { DispatcherTimer_tick(sender2, e2, dispatcher, prismarine, mazeGrid, mazeTextForm, mazeCompleted, changeMoveCounter, currentMoveCount); };
-            dispatcher.Interval = TimeSpan.FromMilliseconds(500);
+            dispatcher.Interval = TimeSpan.FromMilliseconds(25);
 
             prismarine.SetCanUseKeyboard(false); // disables keyboard input to prevent user from interfering
             solveThisMaze.IsEnabled = false; // prevents the button from being clicked multiple times
