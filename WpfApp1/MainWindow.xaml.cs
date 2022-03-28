@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace WpfApp1
 {
@@ -188,6 +189,7 @@ namespace WpfApp1
         public void LoadMazeComponents(Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, ComboBox flagSelector, Button confirmFlag, Button resetFlagSelection, TextBlock currentMoveCount)
         {
             Button solveThisMaze = new Button();
+            Button devTools = new Button();
 
             TextBlock statsTitle = new TextBlock();
             statsTitle.Width = 120;
@@ -246,7 +248,7 @@ namespace WpfApp1
             Canvas.SetLeft(solveThisMaze, 50);
             mazeCanvas.Children.Add(solveThisMaze);
             solveThisMaze.IsEnabled = false;
-            solveThisMaze.Click += (sender, e) => SolveThisMaze_click(sender, e, prismarine, mazeGrid, mazeTextForm, confirmFlag, resetFlagSelection, solveThisMaze);
+            solveThisMaze.Click += (sender, e) => SolveThisMaze_click(sender, e, prismarine, mazeGrid, mazeTextForm, currentMoveCount, confirmFlag, resetFlagSelection, solveThisMaze, devTools);
 
             List<TextBlock> rowAxis = new List<TextBlock>();
             for (int i = 0; i < 21; i++)
@@ -292,7 +294,6 @@ namespace WpfApp1
             movePlayer.Visibility = Visibility.Hidden;
             movePlayer.Click += (sender, e) => MovePlayer_click(sender, e, flagSelector);
 
-            Button devTools = new Button();
             devTools.Content = "devTools";
             devTools.Width = 60;
             Canvas.SetTop(devTools, 70);
@@ -342,6 +343,8 @@ namespace WpfApp1
         }
 
         #endregion
+
+        #region Setting up the visual maze
 
         public void CreateMazeTemplate(Canvas canvas, Rectangle[,] mazeGrid)
         {
@@ -480,11 +483,13 @@ namespace WpfApp1
             return "NA";
         }
 
+        #endregion
+
         #region Moving the player
 
         private void RootWindow_KeyDown(object sender, KeyEventArgs e, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, ComboBox flagSelector, TextBlock currentMoveCount)
         {
-            bool mazeCompleted = false; // may need to raise these to MainWindow() for use in solve maze mode (1)
+            bool mazeCompleted = false; // may need to raise these to MainWindow() for use in solve maze functions
             bool changeMoveCounter = false;
             
             if (prismarine.GetCanUseKeyboard())
@@ -512,12 +517,10 @@ namespace WpfApp1
                         break;
                 }
 
-                if (changeMoveCounter) prismarine.SetMoveCount(prismarine.GetMoveCount() + 1);
-                currentMoveCount.Text = "Current: " + prismarine.GetMoveCount() + " moves";
+                ChangeMoveCounter(prismarine, currentMoveCount, ref changeMoveCounter);
             }
 
-            if (mazeCompleted)
-            { MessageBox.Show("You completed the maze in " + prismarine.GetMoveCount() + " moves!"); }
+            MazeCompleted(prismarine, ref mazeCompleted);
         }
 
         public void MoveUp(Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, ref bool mazeCompleted, ref bool changeMoveCounter)
@@ -527,6 +530,7 @@ namespace WpfApp1
                 if ((mazeTextForm[prismarine.GetY() - 1, prismarine.GetX()] != '#') && (mazeTextForm[prismarine.GetY() - 1, prismarine.GetX()] != 'S'))
                 {
                     changeMoveCounter = true;
+                    prismarine.SetCompass('N');
 
                     if (mazeTextForm[prismarine.GetY() - 1, prismarine.GetX()] == 'F')
                     {
@@ -563,49 +567,6 @@ namespace WpfApp1
             }
         }
 
-        public void MoveDown(Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, ref bool mazeCompleted, ref bool changeMoveCounter)
-        {
-            if (prismarine.GetY() + 1 <= 20)
-            {
-                if ((mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] != '#') && (mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] != 'S'))
-                {
-                    changeMoveCounter = true;
-
-                    if (mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] == 'F')
-                    {
-                        mazeTextForm[prismarine.GetY(), prismarine.GetX()] = '#';
-                        mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.White;
-                        prismarine.SetY(prismarine.GetY() + 1);
-                        mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.DarkViolet;
-
-                        mazeCompleted = true;
-                    }
-
-                    else if (mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] == 'T')
-                    {
-                        mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.White;
-                        prismarine.SetY(prismarine.GetY() + 1);
-                        mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.DarkViolet;
-                    }
-
-                    else if (mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] == ' ')
-                    {
-                        if (mazeTextForm[prismarine.GetY(), prismarine.GetX()] == 'S')
-                        { mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.DimGray; }
-
-                        else if (mazeTextForm[prismarine.GetY(), prismarine.GetX()] == 'T')
-                        { mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.Aqua; }
-
-                        else if (mazeTextForm[prismarine.GetY(), prismarine.GetX()] == ' ')
-                        { mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.White; }
-
-                        prismarine.SetY(prismarine.GetY() + 1);
-                        mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.DarkViolet;
-                    }
-                }
-            }
-        }
-
         public void MoveLeft(Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, ref bool mazeCompleted, ref bool changeMoveCounter)
         {
             if (prismarine.GetX() - 1 >= 0)
@@ -613,6 +574,7 @@ namespace WpfApp1
                 if ((mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] != '#') && (mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] != 'S'))
                 {
                     changeMoveCounter = true;
+                    prismarine.SetCompass('W');
 
                     if (mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] == 'F')
                     {
@@ -649,6 +611,50 @@ namespace WpfApp1
             }
         }
 
+        public void MoveDown(Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, ref bool mazeCompleted, ref bool changeMoveCounter)
+        {
+            if (prismarine.GetY() + 1 <= 20)
+            {
+                if ((mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] != '#') && (mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] != 'S'))
+                {
+                    changeMoveCounter = true;
+                    prismarine.SetCompass('S');
+
+                    if (mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] == 'F')
+                    {
+                        mazeTextForm[prismarine.GetY(), prismarine.GetX()] = '#';
+                        mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.White;
+                        prismarine.SetY(prismarine.GetY() + 1);
+                        mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.DarkViolet;
+
+                        mazeCompleted = true;
+                    }
+
+                    else if (mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] == 'T')
+                    {
+                        mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.White;
+                        prismarine.SetY(prismarine.GetY() + 1);
+                        mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.DarkViolet;
+                    }
+
+                    else if (mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] == ' ')
+                    {
+                        if (mazeTextForm[prismarine.GetY(), prismarine.GetX()] == 'S')
+                        { mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.DimGray; }
+
+                        else if (mazeTextForm[prismarine.GetY(), prismarine.GetX()] == 'T')
+                        { mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.Aqua; }
+
+                        else if (mazeTextForm[prismarine.GetY(), prismarine.GetX()] == ' ')
+                        { mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.White; }
+
+                        prismarine.SetY(prismarine.GetY() + 1);
+                        mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.DarkViolet;
+                    }
+                }
+            }
+        }
+
         public void MoveRight(Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, ref bool mazeCompleted, ref bool changeMoveCounter)
         {
             if (prismarine.GetX() + 1 <= 20)
@@ -656,6 +662,7 @@ namespace WpfApp1
                 if ((mazeTextForm[prismarine.GetY(), prismarine.GetX() + 1] != '#') && (mazeTextForm[prismarine.GetY(), prismarine.GetX() + 1] != 'S'))
                 {
                     changeMoveCounter = true;
+                    prismarine.SetCompass('E');
 
                     if (mazeTextForm[prismarine.GetY(), prismarine.GetX() + 1] == 'F')
                     {
@@ -712,7 +719,148 @@ namespace WpfApp1
             }
         }
 
+        public void ChangeMoveCounter(Player prismarine, TextBlock currentMoveCount, ref bool changeMoveCounter)
+        {
+            if (changeMoveCounter) prismarine.SetMoveCount(prismarine.GetMoveCount() + 1);
+            currentMoveCount.Text = "Current: " + prismarine.GetMoveCount() + " moves";
+        }
+
+        public void MazeCompleted(Player prismarine, ref bool mazeCompleted)
+        {
+            if (mazeCompleted)
+            { MessageBox.Show("You completed the maze in " + prismarine.GetMoveCount() + " moves!"); }
+        }
+
         #endregion
+
+        #region Solving algorithm functions
+
+        public void Solve_RandomMouse(Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, ref bool mazeCompleted, ref bool changeMoveCounter, TextBlock currentMoveCount)
+        {
+            Random rnd = new Random();
+
+            switch (rnd.Next(4))
+            {
+                case 0:
+                    MoveUp(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter);
+                    break;
+
+                case 1:
+                    MoveLeft(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter);
+                    break;
+
+                case 2:
+                    MoveDown(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter);
+                    break;
+                        
+                case 3:
+                    MoveRight(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter);
+                    break;
+            }
+
+            ChangeMoveCounter(prismarine, currentMoveCount, ref changeMoveCounter);
+            MazeCompleted(prismarine, ref mazeCompleted);
+        }
+
+        public void Solve_HugLeftWall(Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, ref bool mazeCompleted, ref bool changeMoveCounter, TextBlock currentMoveCount) // favoured for solving mazes in play mazes mode
+        {
+            if (prismarine.GetCompass() == 'N')
+            {
+                if ((mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] != '#') && (mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] != 'S'))
+                { MoveLeft(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+
+                else if ((mazeTextForm[prismarine.GetY() - 1, prismarine.GetX()] != '#') && (mazeTextForm[prismarine.GetY() - 1, prismarine.GetX()] != 'S'))
+                { MoveUp(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+
+                else if ((mazeTextForm[prismarine.GetY(), prismarine.GetX() + 1] != '#') && (mazeTextForm[prismarine.GetY(), prismarine.GetX() + 1] != 'S'))
+                { MoveRight(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+
+                else if ((mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] != '#') && (mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] != 'S'))
+                { MoveDown(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+            }
+
+            else if (prismarine.GetCompass() == 'W')
+            {
+                if ((mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] != '#') && (mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] != 'S'))
+                { MoveDown(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+
+                else if ((mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] != '#') && (mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] != 'S'))
+                { MoveLeft(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+
+                else if ((mazeTextForm[prismarine.GetY() - 1, prismarine.GetX()] != '#') && (mazeTextForm[prismarine.GetY() - 1, prismarine.GetX()] != 'S'))
+                { MoveUp(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+
+                else if ((mazeTextForm[prismarine.GetY(), prismarine.GetX() + 1] != '#') && (mazeTextForm[prismarine.GetY(), prismarine.GetX() + 1] != 'S'))
+                { MoveRight(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+            }
+
+            else if (prismarine.GetCompass() == 'S')
+            {
+                if ((mazeTextForm[prismarine.GetY(), prismarine.GetX() + 1] != '#') && (mazeTextForm[prismarine.GetY(), prismarine.GetX() + 1] != 'S'))
+                { MoveRight(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+
+                else if ((mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] != '#') && (mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] != 'S'))
+                { MoveDown(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+
+                else if ((mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] != '#') && (mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] != 'S'))
+                { MoveLeft(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+
+                else if ((mazeTextForm[prismarine.GetY() - 1, prismarine.GetX()] != '#') && (mazeTextForm[prismarine.GetY() - 1, prismarine.GetX()] != 'S'))
+                { MoveUp(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+            }
+
+            else if (prismarine.GetCompass() == 'E')
+            {
+                if ((mazeTextForm[prismarine.GetY() - 1, prismarine.GetX()] != '#') && (mazeTextForm[prismarine.GetY() - 1, prismarine.GetX()] != 'S'))
+                { MoveUp(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+
+                else if ((mazeTextForm[prismarine.GetY(), prismarine.GetX() + 1] != '#') && (mazeTextForm[prismarine.GetY(), prismarine.GetX() + 1] != 'S'))
+                { MoveRight(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+
+                else  if ((mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] != '#') && (mazeTextForm[prismarine.GetY() + 1, prismarine.GetX()] != 'S'))
+                { MoveDown(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+
+                else if ((mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] != '#') && (mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] != 'S'))
+                { MoveLeft(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter); }
+            }
+
+            ChangeMoveCounter(prismarine, currentMoveCount, ref changeMoveCounter);
+            MazeCompleted(prismarine, ref mazeCompleted);
+        }
+
+        public void Solve_Tremaux(Player prismarine)
+        {
+
+        }
+
+        public void Solve_BlindAlley(Player prismarine)
+        {
+
+        }
+
+        public void FillDeadEnds(Player prismarine)
+        {
+
+        }
+
+        private void DispatcherTimer_tick(object sender, EventArgs e, DispatcherTimer dispatcher, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, bool mazeCompleted, bool changeMoveCounter, TextBlock currentMoveCount)
+        {
+            Solve_HugLeftWall(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter, currentMoveCount);
+            if (mazeCompleted) dispatcher.Stop();
+        }
+
+        #endregion
+
+        #region Create maze functions
+
+        public void Create_Minotaur()
+        {
+
+        }
+
+        #endregion
+
+        #region [Play mazes] buttons
 
         private void ConfirmFlag_click(object sender, EventArgs e, int mode, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, TextBlock statsTitle, TextBlock statsTitleUnderlined, TextBlock recordNoOfMoves, TextBlock currentMoveCount, ComboBox flagSelector, Button confirmFlag, Button resetFlagSelection, Button solveThisMaze)
         {
@@ -774,21 +922,24 @@ namespace WpfApp1
             }
         }
 
-        private void SolveThisMaze_click(object sender, EventArgs e, /*bool canUseKeyboard,*/ Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, Button confirmFlag, Button resetFlagSelection, Button solveThisMaze)
+        private void SolveThisMaze_click(object sender, EventArgs e, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, TextBlock currentMoveCount, Button confirmFlag, Button resetFlagSelection, Button solveThisMaze, Button devTools)
         {
-            //canUseKeyboard = false;
+            bool mazeCompleted = false;
+            bool changeMoveCounter = false;
 
-            for (int row = 0; row < 21; row++)
-            {
-                for (int col = 0; col < 21; col++)
-                {
-                    if (mazeTextForm[row, col] == 'S')
-                    {
-                        //prismarine.SetYX(row, col, 0);
-                    }
-                }
-            }
+            DispatcherTimer dispatcher = new DispatcherTimer(DispatcherPriority.Send);
+            dispatcher.Tick += (sender2, e2) => { DispatcherTimer_tick(sender2, e2, dispatcher, prismarine, mazeGrid, mazeTextForm, mazeCompleted, changeMoveCounter, currentMoveCount); };
+            dispatcher.Interval = TimeSpan.FromMilliseconds(500);
+
+            prismarine.SetCanUseKeyboard(false); // disables keyboard input to prevent user from interfering
+            solveThisMaze.IsEnabled = false; // prevents the button from being clicked multiple times
+            devTools.IsEnabled = false; // prevents the button from being clicked
+            DisplayMaze(0, prismarine, mazeGrid, mazeTextForm); // resets the visual representation of the maze
+
+            dispatcher.Start();
         }
+
+        #endregion
 
         #region Developer tools
 
