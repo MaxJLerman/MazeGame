@@ -55,16 +55,21 @@ namespace WpfApp1
         private bool used;
 
         public TeleportSquare() { }
+        public TeleportSquare(int TsY, int TsX, bool used)
+        {
+            this.TsY = TsY;
+            this.TsX = TsX;
+            this.used = used;
+        }
 
         public int GetTsY() { return TsY; }
         public int GetTsX() { return TsX; }
         public bool GetUsed() { return used; }
         public void SetUsed(bool used) { this.used = used; }
-        public void SetTsYX(int TsY, int TsX, bool used)
+        public void SetTsYX(int TsY, int TsX)
         {
             this.TsY = TsY;
             this.TsX = TsX;
-            this.used = used;
         }
     }
 
@@ -77,18 +82,19 @@ namespace WpfApp1
             Canvas mazeCanvas = new Canvas(); // create a canvas to display the maze
             Rectangle[,] mazeGrid = new Rectangle[21, 21]; // create 400 rectangle objects to be squares in the maze
             char[,] mazeTextForm = new char[21, 21]; // create a 20x20 array of character objects to represent the maze in text form
+            List<TeleportSquare> teleportList = new List<TeleportSquare>();
 
             ComboBox flagSelector = new ComboBox(); // creating components that need to be passed to multiple functions further down
             TextBlock currentMoveCount = new TextBlock();
 
             Player prismarine = new Player(0, 0, 0, ' ', false); // creating a player called Prismarine ;)
 
-            this.KeyDown += delegate (object sender, KeyEventArgs e) { RootWindow_KeyDown(sender, e, prismarine, mazeGrid, mazeTextForm, flagSelector, currentMoveCount); };
+            this.KeyDown += delegate (object sender, KeyEventArgs e) { RootWindow_KeyDown(sender, e, prismarine, mazeGrid, mazeTextForm, teleportList, flagSelector, currentMoveCount); };
 
-            MainFunction(prismarine, mazeCanvas, mazeGrid, mazeTextForm, flagSelector, currentMoveCount);
+            MainFunction(prismarine, mazeCanvas, mazeGrid, mazeTextForm, teleportList, flagSelector, currentMoveCount);
         }
 
-        public void MainFunction(Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, ComboBox flagSelector, TextBlock currentMoveCount)
+        public void MainFunction(Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, List<TeleportSquare> teleportList, ComboBox flagSelector, TextBlock currentMoveCount)
         {
             Button confirmFlag = new Button();
             Button resetFlagSelection = new Button();
@@ -121,7 +127,7 @@ namespace WpfApp1
             Canvas.SetTop(playMazes, 400);
             Canvas.SetLeft(playMazes, 1820 / 2 - 150);
             menuCanvas.Children.Add(playMazes);
-            playMazes.Click += (sender, e) => PlayMazes_click(sender, e, prismarine, mazeCanvas, mazeGrid, mazeTextForm, flagSelector, confirmFlag, resetFlagSelection, currentMoveCount);
+            playMazes.Click += (sender, e) => PlayMazes_click(sender, e, prismarine, mazeCanvas, mazeGrid, mazeTextForm, teleportList, flagSelector, confirmFlag, resetFlagSelection, currentMoveCount);
 
             Canvas solveCanvas = new Canvas();
             Button solveMazes = new Button
@@ -152,14 +158,14 @@ namespace WpfApp1
 
         #region Menu choices
 
-        private void PlayMazes_click(object sender, EventArgs e, Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, ComboBox flagSelector, Button confirmFlag, Button resetFlagSelection, TextBlock currentMoveCount)
+        private void PlayMazes_click(object sender, EventArgs e, Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, List<TeleportSquare> teleportList, ComboBox flagSelector, Button confirmFlag, Button resetFlagSelection, TextBlock currentMoveCount)
         {
             mazeCanvas.Height = 980; // 100 less than 1080p
             mazeCanvas.Width = 1820;
             mazeCanvas.Background = Brushes.LightGray;
             RootWindow.Content = mazeCanvas;
 
-            LoadMazeComponents(prismarine, mazeCanvas, mazeGrid, mazeTextForm, flagSelector, confirmFlag, resetFlagSelection, currentMoveCount);
+            LoadMazeComponents(prismarine, mazeCanvas, mazeGrid, mazeTextForm, teleportList, flagSelector, confirmFlag, resetFlagSelection, currentMoveCount);
             CreateMazeTemplate(mazeCanvas, mazeGrid);
         }
 
@@ -189,7 +195,7 @@ namespace WpfApp1
 
         #region Loading in respective components
 
-        public void LoadMazeComponents(Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, ComboBox flagSelector, Button confirmFlag, Button resetFlagSelection, TextBlock currentMoveCount)
+        public void LoadMazeComponents(Player prismarine, Canvas mazeCanvas, Rectangle[,] mazeGrid, char[,] mazeTextForm, List<TeleportSquare> teleportList, ComboBox flagSelector, Button confirmFlag, Button resetFlagSelection, TextBlock currentMoveCount)
         {
             Button solveThisMaze = new Button();
             Button devTools = new Button();
@@ -235,7 +241,7 @@ namespace WpfApp1
             Canvas.SetTop(confirmFlag, 70);
             Canvas.SetLeft(confirmFlag, 115);
             mazeCanvas.Children.Add(confirmFlag);
-            confirmFlag.Click += (sender, e) => ConfirmFlag_click(sender, e, 0, prismarine, mazeGrid, mazeTextForm, statsTitle, statsTitleUnderlined, recordNoOfMoves, currentMoveCount, flagSelector, confirmFlag, resetFlagSelection, solveThisMaze);
+            confirmFlag.Click += (sender, e) => ConfirmFlag_click(sender, e, 0, prismarine, mazeGrid, mazeTextForm, teleportList, statsTitle, statsTitleUnderlined, recordNoOfMoves, currentMoveCount, flagSelector, confirmFlag, resetFlagSelection, solveThisMaze);
 
             resetFlagSelection.Content = "Reset selection";
             resetFlagSelection.Width = 97.5;
@@ -251,7 +257,7 @@ namespace WpfApp1
             Canvas.SetLeft(solveThisMaze, 50);
             mazeCanvas.Children.Add(solveThisMaze);
             solveThisMaze.IsEnabled = false;
-            solveThisMaze.Click += (sender, e) => SolveThisMaze_click(sender, e, prismarine, mazeGrid, mazeTextForm, currentMoveCount, confirmFlag, resetFlagSelection, solveThisMaze, devTools);
+            solveThisMaze.Click += (sender, e) => SolveThisMaze_click(sender, e, prismarine, mazeGrid, mazeTextForm, teleportList, currentMoveCount, flagSelector, confirmFlag, resetFlagSelection, solveThisMaze, devTools);
 
             List<TextBlock> rowAxis = new List<TextBlock>();
             for (int i = 0; i < 21; i++)
@@ -325,7 +331,7 @@ namespace WpfApp1
             Canvas.SetTop(confirmFlag, 70);
             Canvas.SetLeft(confirmFlag, 115);
             solveCanvas.Children.Add(confirmFlag);
-            confirmFlag.Click += (sender, e) => ConfirmFlag_click(sender, e, 1, null, mazeGrid, solvedTextForm, null, null, null, currentMoveCount, flagSelector, confirmFlag, resetFlagSelection, null);
+            confirmFlag.Click += (sender, e) => ConfirmFlag_click(sender, e, 1, null, mazeGrid, solvedTextForm, null, null, null, null, currentMoveCount, flagSelector, confirmFlag, resetFlagSelection, null);
 
             resetFlagSelection.Content = "Reset selection";
             resetFlagSelection.Width = 97.5;
@@ -395,8 +401,10 @@ namespace WpfApp1
             }
         }
 
-        public void DisplayMaze(int mode, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm)
+        public void DisplayMaze(int mode, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, List<TeleportSquare> teleportList)
         {
+            teleportList.Clear();
+
             for (int row = 0; row < 21; row++)
             {
                 for (int col = 0; col < 21; col++)
@@ -417,6 +425,7 @@ namespace WpfApp1
                         
                         case 'T':
                             mazeGrid[row, col].Fill = Brushes.Aqua;
+                            teleportList.Add(new TeleportSquare(row, col, false));
                             break;
 
                         case '1':
@@ -461,7 +470,7 @@ namespace WpfApp1
 
         #region Moving the player
 
-        private void RootWindow_KeyDown(object sender, KeyEventArgs e, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, ComboBox flagSelector, TextBlock currentMoveCount)
+        private void RootWindow_KeyDown(object sender, KeyEventArgs e, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, List<TeleportSquare> teleportList, ComboBox flagSelector, TextBlock currentMoveCount)
         {
             bool mazeCompleted = false; // may need to raise these to MainWindow() for use in solve maze functions
             bool changeMoveCounter = false;
@@ -487,7 +496,7 @@ namespace WpfApp1
                         break;
 
                     case Key.Space:
-                        MoveTeleport(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter, flagSelector);
+                        MoveTeleport(prismarine, mazeGrid, mazeTextForm, mazeTextForm[prismarine.GetY(), prismarine.GetX()], teleportList, ref mazeCompleted, ref changeMoveCounter, flagSelector);
                         break;
                 }
 
@@ -673,53 +682,38 @@ namespace WpfApp1
             }
         }
 
-        public void MoveTeleport(Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, ref bool mazeCompleted, ref bool changeMoveCounter, ComboBox flagSelector)
+        public void MoveTeleport(Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, char teleportChar, List<TeleportSquare> teleportList, ref bool mazeCompleted, ref bool changeMoveCounter, ComboBox flagSelector)
         {
-            changeMoveCounter = true;
-
-            if (mazeTextForm[prismarine.GetY(), prismarine.GetX()] == 'T')
+            if (teleportChar == 'T' || teleportChar == '1')
             {
-                string flagName = flagSelector.SelectedItem.ToString() + ".txt";
-                TeleportSquare ts = TeleportPosition(prismarine, flagName, mazeTextForm);
-
-                mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.Aqua;
-                prismarine.SetYX(ts.GetTsY(), ts.GetTsX(), prismarine.GetMoveCount());
-                mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.DarkViolet;
-            }
-
-            else if (mazeTextForm[prismarine.GetY(), prismarine.GetX()] == '1')
-            {
-
-            }
-        }
-
-        public TeleportSquare TeleportPosition(Player prismarine, string fileName, char[,] mazeTextForm)
-        {
-            string filePath = @"F:\Documents\Programming\C#\MazeGameV2\mazes\Loadable\" + fileName;
-            string[] lines = File.ReadAllLines(filePath);
-
-            TeleportSquare ts = new TeleportSquare(); // needs to be declared way further up to avoid being recreated every time I land on a teleport pad
-
-            int j = -1;
-            bool breakLoops = false;
-            foreach (string line in lines)
-            {
-                j++;
-                for (int i = 0; i < line.Length; i++)
+                TeleportSquare teleportFrom = new TeleportSquare();
+                TeleportSquare teleportTo = new TeleportSquare();
+                foreach (TeleportSquare ts in teleportList)
                 {
-                    if (mazeTextForm[j, i] == 'T' && prismarine.GetY() != j)
-                    {
-                        ts.SetTsYX(j, i, false);
-                        breakLoops = true;
-                        break;
-                    }
+                    if (prismarine.GetY() == ts.GetTsY() && prismarine.GetX() == ts.GetTsX() && mazeTextForm[ts.GetTsY(), ts.GetTsX()] == 'T') { teleportFrom = ts; }
+                    if (prismarine.GetY() != ts.GetTsY() && prismarine.GetX() != ts.GetTsX() && mazeTextForm[ts.GetTsY(), ts.GetTsX()] == 'T') { teleportTo = ts; }
                 }
 
-                if (breakLoops)
-                { break; }
-            }
+                if (!teleportFrom.GetUsed())
+                {
+                    changeMoveCounter = true;
 
-            return ts;
+                    if (teleportChar == 'T')
+                    {
+                        teleportFrom.SetUsed(true);
+                        teleportTo.SetUsed(true);
+
+                        mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.Aqua;
+                        prismarine.SetYX(teleportTo.GetTsY(), teleportTo.GetTsX(), prismarine.GetMoveCount());
+                        mazeGrid[prismarine.GetY(), prismarine.GetX()].Fill = Brushes.DarkViolet;
+                    }
+
+                    else if (teleportChar == '1')
+                    {
+
+                    }
+                }
+            }
         }
 
         public void ChangeMoveCounter(Player prismarine, TextBlock currentMoveCount, ref bool changeMoveCounter)
@@ -732,17 +726,17 @@ namespace WpfApp1
         {
             if (mazeCompleted)
             { MessageBox.Show("You completed the maze in " + prismarine.GetMoveCount() + " moves!"); }
-        }
+        } 
 
         #endregion
 
         #region Solving algorithm functions
 
-        public void Solve_RandomMouse(Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, ref bool mazeCompleted, ref bool changeMoveCounter, TextBlock currentMoveCount)
+        public void Solve_RandomMouse(Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, List<TeleportSquare> teleportList, ref bool mazeCompleted, ref bool changeMoveCounter, TextBlock currentMoveCount, ComboBox flagSelector)
         {
             Random rnd = new Random();
 
-            switch (rnd.Next(4))
+            switch (rnd.Next(5))
             {
                 case 0:
                     MoveUp(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter);
@@ -759,14 +753,22 @@ namespace WpfApp1
                 case 3:
                     MoveRight(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter);
                     break;
+
+                case 4:
+                    MoveTeleport(prismarine, mazeGrid, mazeTextForm, mazeTextForm[prismarine.GetY(), prismarine.GetX()], teleportList, ref mazeCompleted, ref changeMoveCounter, flagSelector);
+                    break;
             }
 
             ChangeMoveCounter(prismarine, currentMoveCount, ref changeMoveCounter);
             MazeCompleted(prismarine, ref mazeCompleted);
         }
 
-        public void Solve_HugLeftWall(Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, ref bool mazeCompleted, ref bool changeMoveCounter, TextBlock currentMoveCount) // favoured for solving mazes in play mazes mode
+        public void Solve_HugLeftWall(Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, List<TeleportSquare> teleportList, ref bool mazeCompleted, ref bool changeMoveCounter, TextBlock currentMoveCount, ComboBox flagSelector) // favoured for solving mazes in play mazes mode
         {
+            char[] teleportChars = { 'T', '1' };
+            if (teleportChars.Contains(mazeTextForm[prismarine.GetY(), prismarine.GetX()]))
+            { MoveTeleport(prismarine, mazeGrid, mazeTextForm, mazeTextForm[prismarine.GetY(), prismarine.GetX()], teleportList, ref mazeCompleted, ref changeMoveCounter, flagSelector); }
+
             if (prismarine.GetCompass() == 'N')
             {
                 if ((mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] != '#') && (mazeTextForm[prismarine.GetY(), prismarine.GetX() - 1] != 'S'))
@@ -846,9 +848,10 @@ namespace WpfApp1
 
         }
 
-        private void DispatcherTimer_tick(object sender, EventArgs e, DispatcherTimer dispatcher, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, bool mazeCompleted, bool changeMoveCounter, TextBlock currentMoveCount)
+        private void DispatcherTimer_tick(object sender, EventArgs e, DispatcherTimer dispatcher, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, List<TeleportSquare> teleportList, bool mazeCompleted, bool changeMoveCounter, TextBlock currentMoveCount, ComboBox flagSelector)
         {
-            Solve_HugLeftWall(prismarine, mazeGrid, mazeTextForm, ref mazeCompleted, ref changeMoveCounter, currentMoveCount);
+            //Solve_RandomMouse(prismarine, mazeGrid, mazeTextForm, teleportList, ref mazeCompleted, ref changeMoveCounter, currentMoveCount, flagSelector);
+            Solve_HugLeftWall(prismarine, mazeGrid, mazeTextForm, teleportList, ref mazeCompleted, ref changeMoveCounter, currentMoveCount, flagSelector);
             if (mazeCompleted) dispatcher.Stop();
         }
 
@@ -865,7 +868,7 @@ namespace WpfApp1
 
         #region [Play mazes] buttons
 
-        private void ConfirmFlag_click(object sender, EventArgs e, int mode, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, TextBlock statsTitle, TextBlock statsTitleUnderlined, TextBlock recordNoOfMoves, TextBlock currentMoveCount, ComboBox flagSelector, Button confirmFlag, Button resetFlagSelection, Button solveThisMaze)
+        private void ConfirmFlag_click(object sender, EventArgs e, int mode, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, List<TeleportSquare> teleportList, TextBlock statsTitle, TextBlock statsTitleUnderlined, TextBlock recordNoOfMoves, TextBlock currentMoveCount, ComboBox flagSelector, Button confirmFlag, Button resetFlagSelection, Button solveThisMaze)
         {
             if (flagSelector.SelectedIndex > -1)
             {
@@ -894,7 +897,7 @@ namespace WpfApp1
                 }
 
                 ImportMaze(filePath, mazeTextForm);
-                DisplayMaze(mode, prismarine, mazeGrid, mazeTextForm);
+                DisplayMaze(mode, prismarine, mazeGrid, mazeTextForm, teleportList);
             }
             
             else MessageBox.Show("Flag not selected!");
@@ -925,19 +928,19 @@ namespace WpfApp1
             }
         }
 
-        private void SolveThisMaze_click(object sender, EventArgs e, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, TextBlock currentMoveCount, Button confirmFlag, Button resetFlagSelection, Button solveThisMaze, Button devTools)
+        private void SolveThisMaze_click(object sender, EventArgs e, Player prismarine, Rectangle[,] mazeGrid, char[,] mazeTextForm, List<TeleportSquare> teleportList, TextBlock currentMoveCount, ComboBox flagSelector, Button confirmFlag, Button resetFlagSelection, Button solveThisMaze, Button devTools)
         {
             bool mazeCompleted = false;
             bool changeMoveCounter = false;
 
             DispatcherTimer dispatcher = new DispatcherTimer(DispatcherPriority.Send);
-            dispatcher.Tick += (sender2, e2) => { DispatcherTimer_tick(sender2, e2, dispatcher, prismarine, mazeGrid, mazeTextForm, mazeCompleted, changeMoveCounter, currentMoveCount); };
-            dispatcher.Interval = TimeSpan.FromMilliseconds(25);
+            dispatcher.Tick += (sender2, e2) => { DispatcherTimer_tick(sender2, e2, dispatcher, prismarine, mazeGrid, mazeTextForm, teleportList, mazeCompleted, changeMoveCounter, currentMoveCount, flagSelector); };
+            dispatcher.Interval = TimeSpan.FromMilliseconds(25); // change to 0 for instantaneous solve
 
             prismarine.SetCanUseKeyboard(false); // disables keyboard input to prevent user from interfering
             solveThisMaze.IsEnabled = false; // prevents the button from being clicked multiple times
             devTools.IsEnabled = false; // prevents the button from being clicked
-            DisplayMaze(0, prismarine, mazeGrid, mazeTextForm); // resets the visual representation of the maze
+            DisplayMaze(0, prismarine, mazeGrid, mazeTextForm, teleportList); // resets the visual representation of the maze
 
             dispatcher.Start();
         }
@@ -980,7 +983,7 @@ namespace WpfApp1
 }
 
 /* to do:
-            make enemies appear in maze - red in colour, if you land on them before attacking them (press space) you have to start again from the begining of the maze
+            make enemies appear in maze - red in colour, if you land on them before attacking them (press a key) you have to start again from the begining of the maze
             maze solver - automates finding the exit of the maze
             add timer
             add controls description
