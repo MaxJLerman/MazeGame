@@ -20,9 +20,17 @@ namespace WpfApp1
     public partial class MovePlayer : Window
     {
         public MovePlayer()
+        { InitializeComponent(); }
+
+        public MovePlayer(Player prismarine, Rectangle[,] mazeGrid)
         {
             InitializeComponent();
 
+            MainFunction(prismarine, mazeGrid);
+        }
+
+        public void MainFunction(Player prismarine, Rectangle[,] mazeGrid)
+        {
             Canvas mpCanvas = new Canvas
             {
                 Height = 200,
@@ -82,6 +90,36 @@ namespace WpfApp1
             Canvas.SetTop(confirmButton, 120);
             Canvas.SetLeft(confirmButton, 5);
             mpCanvas.Children.Add(confirmButton);
+            confirmButton.Click += (sender, e) => ConfirmButton_Click(sender, e, prismarine, mazeGrid, rowBox, colBox);
+        }
+
+        private void ConfirmButton_Click(object sender, EventArgs e, Player prismarine, Rectangle[,] mazeGrid, TextBox rowBox, TextBox colBox)
+        {
+            int row = 0, col = 0;
+            bool valid = true;
+
+            if (rowBox.Text != "" && colBox.Text != "")
+            {
+                bool valid_row = int.TryParse(rowBox.Text, out row);
+                if (!valid_row || row < 0 || row > 20)
+                { 
+                    valid = false; 
+                    MessageBox.Show("Row value must be a whole number between 0 and 20", "Error"); 
+                }
+
+                bool valid_col = int.TryParse(colBox.Text, out col);
+                if (!valid_col || col < 0 || col > 20)
+                { 
+                    valid = false; 
+                    MessageBox.Show("Column value must be a whole number between 0 and 20", "Error"); 
+                }
+            }
+
+            else valid = false;
+
+            if (!valid) MessageBox.Show("You must enter a number into each box", "Error");
+
+            else (Application.Current.Windows[0] as MainWindow).MovePlayer(prismarine, mazeGrid, row, col);
         }
     }
 }
