@@ -21,15 +21,14 @@ namespace WpfApp1
     {
         public MovePlayer()
         { InitializeComponent(); }
-
-        public MovePlayer(Player prismarine, Rectangle[,] mazeGrid)
+        public MovePlayer(Player prismarine, MazeLevel mazeLevel)
         {
             InitializeComponent();
 
-            MainFunction(prismarine, mazeGrid);
+            MainFunction(prismarine, mazeLevel);
         }
 
-        public void MainFunction(Player prismarine, Rectangle[,] mazeGrid)
+        public void MainFunction(Player prismarine, MazeLevel mazeLevel)
         {
             Canvas mpCanvas = new Canvas
             {
@@ -90,10 +89,10 @@ namespace WpfApp1
             Canvas.SetTop(confirmButton, 120);
             Canvas.SetLeft(confirmButton, 5);
             mpCanvas.Children.Add(confirmButton);
-            confirmButton.Click += (sender, e) => ConfirmButton_Click(sender, e, prismarine, mazeGrid, rowBox, colBox);
+            confirmButton.Click += (sender, e) => ConfirmButton_Click(sender, e, prismarine, mazeLevel, rowBox, colBox);
         }
 
-        private void ConfirmButton_Click(object sender, EventArgs e, Player prismarine, Rectangle[,] mazeGrid, TextBox rowBox, TextBox colBox)
+        private void ConfirmButton_Click(object sender, EventArgs e, Player prismarine, MazeLevel mazeLevel, TextBox rowBox, TextBox colBox)
         {
             int row = 0, col = 0;
             bool valid = true;
@@ -119,7 +118,11 @@ namespace WpfApp1
 
             if (!valid) MessageBox.Show("You must enter a number into each box", "Error");
 
-            else (Application.Current.Windows[0] as MainWindow).MovePlayer(prismarine, mazeGrid, row, col);
+            else
+            {
+                (Application.Current.Windows[0] as MainWindow).MovePlayer(prismarine, mazeLevel, row, col);
+                this.Close();
+            }
         }
     }
 }
